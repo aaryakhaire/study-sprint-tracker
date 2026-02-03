@@ -1,5 +1,8 @@
 let seconds = 0;
 let interval = null;
+let pomodoroMax = 1500;
+
+const beep = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
 
 const timerDisplay = document.getElementById("timer");
 const historyList = document.getElementById("history");
@@ -20,9 +23,41 @@ document.getElementById("startBtn").onclick = () => {
   }, 1000);
 };
 
-document.getElementById("stopBtn").onclick = () => {
-  if (!interval) return;
+document.getElementById("stopBtn").onclick = stopSession;
 
+document.getElementById("resetBtn").onclick = () => {
+  clearInterval(interval);
+  interval = null;
+  seconds = 0;
+  updateTimer();
+};
+
+document.getElementById("pomodoroBtn").onclick = () => {
+  clearInterval(interval);
+  seconds = pomodoroMax;
+  interval = setInterval(() => {
+    seconds--;
+    updateTimer();
+
+    if (seconds <= 0) {
+      clearInterval(interval);
+      interval = null;
+      beep.play();
+      alert("Pomodoro complete!");
+    }
+  }, 1000);
+};
+
+document.getElementById("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(sessions, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "study-data.json";
+  a.click();
+};
+
+function stopSession() {
+  if (!interval) return;
   clearInterval(interval);
   interval = null;
 
@@ -41,7 +76,7 @@ document.getElementById("stopBtn").onclick = () => {
 
   seconds = 0;
   updateTimer();
-};
+}
 
 function updateTimer() {
   let h = Math.floor(seconds / 3600);
@@ -50,6 +85,9 @@ function updateTimer() {
 
   timerDisplay.textContent =
     `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+  let percent = ((pomodoroMax - seconds) / pomodoroMax) * 100;
+  document.getElementById("bar").style.width = percent + "%";
 }
 
 function pad(n) {
@@ -58,9 +96,21 @@ function pad(n) {
 
 function updateHistory() {
   historyList.innerHTML = "";
-  sessions.slice(-5).reverse().forEach(session => {
+
+  sessions.slice(-5).reverse().forEach((session, index) => {
     const li = document.createElement("li");
     li.textContent = `${session.date} - ${session.minutes} mins`;
+
+    const del = document.createElement("button");
+    del.textContent = "X";
+    del.onclick = () => {
+      sessions.splice(sessions.length - 1 - index, 1);
+      localStorage.setItem("sessions", JSON.stringify(sessions));
+      updateHistory();
+      updateStats();
+    };
+
+    li.appendChild(del);
     historyList.appendChild(li);
   });
 }
