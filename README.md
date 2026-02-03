@@ -22,7 +22,7 @@ Built with pure HTML, CSS, and JavaScript — no frameworks.
 ## Demo
 
 Live app:
-https://yourusername.github.io/study-sprint-tracker
+https://aaryakhaire.github.io/study-sprint-tracker
 
 ---
 
